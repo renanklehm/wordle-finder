@@ -24,6 +24,8 @@ class Handler:
     
     def get_input(self):
         self.get_correct_letters()
+        if None not in self.correct_letters.values():
+            return self.correct_letters, self.partial_letters, self.wrong_letters
         self.get_partial_letters()
         self.get_wrong_letters()
         
@@ -82,3 +84,10 @@ class Handler:
             return self.get_wrong_letters()
         for letter in _input:
             self.wrong_letters.append(letter)
+        for letter in self.correct_letters.values():
+            while letter in self.wrong_letters:
+                self.wrong_letters.remove(letter)
+        for letter_list in self.partial_letters.values():
+            for letter in letter_list:
+                while letter in self.wrong_letters:
+                    self.wrong_letters.remove(letter)

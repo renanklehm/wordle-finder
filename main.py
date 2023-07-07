@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+import os
 from tqdm import tqdm
 from input_handler.handler import Handler
 
@@ -39,26 +39,29 @@ def validate_guess(guess_word, comp_word):
     for idx, letter in enumerate(guess_word):
         if letter in comp_word:
             if guess_word[idx] == comp_word[idx]:
-                score += 10
+                score += 1
             else:
-                score += 5
+                score += 0.5
         else:
             score -= 1
     return score
 
-handler = Handler()
-correct_letters, partial_letters, wrong_letters = handler.get_input()
-filtered_words = get_possible_words(df, correct_letters, partial_letters, wrong_letters)
 
-while(None in correct_letters.values()):
-    possible_words = {}
-    for candidate_guess in tqdm(filtered_words):
-        score = 0
-        for comp_word in possible_words:
-            score += validate_guess(candidate_guess, comp_word)
-        possible_words[candidate_guess] = score
-    possible_words = pd.DataFrame.from_dict(possible_words, orient='index', columns=['score'])
-    possible_words.sort_values(by=['score'], ascending=False, inplace=True)
-    print(possible_words.head(10).to_markdown())
+
+while True:
+    handler = Handler()
     correct_letters, partial_letters, wrong_letters = handler.get_input()
     filtered_words = get_possible_words(df, correct_letters, partial_letters, wrong_letters)
+    while(None in correct_letters.values()):
+        possible_words = {}
+        for candidate_guess in tqdm(filtered_words):
+            score = 0
+            for comp_word in possible_words:
+                score += validate_guess(candidate_guess, comp_word)
+            possible_words[candidate_guess] = score
+        possible_words = pd.DataFrame.from_dict(possible_words, orient='index', columns=['score'])
+        possible_words.sort_values(by=['score'], ascending=False, inplace=True)
+        print(possible_words.head(10).to_markdown())
+        correct_letters, partial_letters, wrong_letters = handler.get_input()
+        filtered_words = get_possible_words(df, correct_letters, partial_letters, wrong_letters)
+    os.system('cls')
