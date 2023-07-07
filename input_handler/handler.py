@@ -23,67 +23,21 @@ class Handler:
         self.wrong_letters = []
     
     def get_input(self):
-        self.get_correct_letters()
-        if None not in self.correct_letters.values():
-            return self.correct_letters, self.partial_letters, self.wrong_letters
-        self.get_partial_letters()
-        self.get_wrong_letters()
-        
-        _correct_letters = self.correct_letters
-        _partial_letters = self.partial_letters
-        _wrong_letters = self.wrong_letters
-        
-        return _correct_letters, _partial_letters, _wrong_letters
-    
-    def get_correct_letters(self):
-        try:
-            _input = str(input('Correct Letters (unknowns should be "-"): '))
-            if len(_input) != 5:
-                raise ValueError('Incorrect number of letters')
-            if any(c in self.special_characters for c in _input):
-                raise ValueError('Invalid character')
-        except ValueError as e:
-            print(e)
-            return self.get_correct_letters()
-        
-        for idx, letter in enumerate(_input):
-            if letter != '-':
-                self.correct_letters[str(idx+1)] = letter
+        for i in range(1, 6):
+            print(f"Input for letter {i}")
+            letter, color = self.read_letter()
+            if color == 'g':
+                if self.correct_letters[str(i)] is not None and self.correct_letters[str(i)] != letter:
+                    overwrite = input(f"Green letter already set to {self.correct_letters[str(i)]} at position {i}, do you want to overwrite it? [y/Y]")[0]
+                    if overwrite == 'y' or overwrite == 'Y':
+                        self.correct_letters[str(i)] = letter
+                self.correct_letters[str(i)] = letter
+            elif color == 'y':
+                self.partial_letters[str(i)].append(letter)
             else:
-                self.correct_letters[str(idx+1)] = None
-
-    def get_partial_letters(self):
-        for i in range(5):
-            try:
-                if i == 0: _input = str(input(f'Partial letter for {i+1}st spot: '))
-                elif i == 1: _input = str(input(f'Partial letter for {i+1}nd spot: '))
-                elif i == 2: _input = str(input(f'Partial letter for {i+1}rd spot: '))
-                else: _input = str(input(f'Partial letter for {i+1}th spot: '))
-                
-                if _input == '':
-                    continue
-                if len(_input) != 1:
-                    raise ValueError('Only one letter per guess allowed')
-                if any(c in self.special_characters for c in self.partial_letters):
-                    raise ValueError('Invalid character')
-            except ValueError as e:
-                print(e)
-                return self.get_partial_letters()
-            self.partial_letters[f'{i+1}'].append(_input)
-
-
-    def get_wrong_letters(self):
-        try:
-            _input = str(input('Wrong letters: '))
-            if len(_input) > 5:
-                raise ValueError('Incorrect number of letters')
-            if any(c in self.special_characters for c in _input):
-                raise ValueError('Invalid character')
-        except ValueError as e:
-            print(e)
-            return self.get_wrong_letters()
-        for letter in _input:
-            self.wrong_letters.append(letter)
+                self.wrong_letters.append(letter)
+            print('\n')
+        
         for letter in self.correct_letters.values():
             while letter in self.wrong_letters:
                 self.wrong_letters.remove(letter)
@@ -91,3 +45,16 @@ class Handler:
             for letter in letter_list:
                 while letter in self.wrong_letters:
                     self.wrong_letters.remove(letter)
+        
+        return self.correct_letters, self.partial_letters, self.wrong_letters
+
+    def read_letter(self):
+        letter = input("Enter letter: ")[0]        
+        if letter in self.special_characters or letter is None:
+            print("Invalid letter")
+            return self.read_letter()
+        color = input("Enter color [g = Green | y = Yellow | n = Neutral]: ")[0]
+        if color not in ['g', 'y', 'n']:
+            print("Invalid color")
+            return self.read_letter()
+        return letter, color
