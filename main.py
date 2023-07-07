@@ -47,7 +47,6 @@ def validate_guess(guess_word, comp_word):
     return score
 
 
-
 while True:
     handler = Handler()
     correct_letters, partial_letters, wrong_letters = handler.get_input()
