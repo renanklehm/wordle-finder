@@ -13,48 +13,52 @@ class Handler:
             '4': None,
             '5': None
         }
-        self.partial_letters = {
+        self.wrong_letters = {
             '1': [],
             '2': [],
             '3': [],
             '4': [],
             '5': []
         }
-        self.wrong_letters = []
+        self.allowed_letters = []
     
     def get_input(self):
-        for i in range(1, 6):
-            print(f"Input for letter {i}")
-            letter, color = self.read_letter()
-            if color == 'g':
-                if self.correct_letters[str(i)] is not None and self.correct_letters[str(i)] != letter:
-                    overwrite = input(f"Green letter already set to {self.correct_letters[str(i)]} at position {i}, do you want to overwrite it? [y/Y]")[0]
-                    if overwrite == 'y' or overwrite == 'Y':
-                        self.correct_letters[str(i)] = letter
-                self.correct_letters[str(i)] = letter
-            elif color == 'y':
-                self.partial_letters[str(i)].append(letter)
-            else:
-                self.wrong_letters.append(letter)
-            print('\n')
+        word, colors = self.read_word(), self.read_colors()
+        for i in range(5):
+            if self.correct_letters[str(i+1)] is None:
+                if colors[i] == 'g':
+                    self.correct_letters[str(i+1)] = word[i]
+                    self.allowed_letters.append(word[i])
+                elif colors[i] == 'y':
+                    for key in self.wrong_letters.keys():
+                        while word[i] in self.wrong_letters[key]:
+                            self.wrong_letters[key].remove(word[i])
+                    self.wrong_letters[str(i+1)].append(word[i])
+                    self.allowed_letters.append(word[i])
+                else:
+                    should_skip = any(word[j] == word[i] and j != i and colors[j] == 'y' for j in range(5))
+                    if should_skip:
+                        continue
+                    for key in self.wrong_letters.keys():
+                        if self.correct_letters[key] is None: 
+                            self.wrong_letters[key].append(word[i])
         
-        for letter in self.correct_letters.values():
-            while letter in self.wrong_letters:
-                self.wrong_letters.remove(letter)
-        for letter_list in self.partial_letters.values():
-            for letter in letter_list:
-                while letter in self.wrong_letters:
-                    self.wrong_letters.remove(letter)
+        for key in self.correct_letters.keys():
+            if self.correct_letters[key] is not None:
+                self.wrong_letters[key] = []
         
-        return self.correct_letters, self.partial_letters, self.wrong_letters
+        return self.correct_letters, self.wrong_letters, self.allowed_letters
+    
+    def read_word(self):
+        word = input("Enter word: ")
+        if self.special_characters in word or word is None or len(word) != 5:
+            print("Invalid word")
+            return self.read_word()
+        return word
 
-    def read_letter(self):
-        letter = input("Enter letter: ")[0]        
-        if letter in self.special_characters or letter is None:
-            print("Invalid letter")
-            return self.read_letter()
-        color = input("Enter color [g = Green | y = Yellow | n = Neutral]: ")[0]
-        if color not in ['g', 'y', 'n']:
-            print("Invalid color")
-            return self.read_letter()
-        return letter, color
+    def read_colors(self):
+        colors = input("Enter colors: ")
+        if all(letter not in ['g', 'y', 'n'] for letter in colors) or colors is None:
+            print("Invalid colors")
+            return self.read_colors()
+        return colors
