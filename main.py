@@ -1,12 +1,11 @@
 import pandas as pd
 import os
 from input_handler.handler import Handler
+from tqdm import tqdm
 
 
-df = pd.read_csv('dataset\\wordle.csv')
-df[['1', '2', '3', '4', '5']] = df['word'].apply(lambda x: pd.Series(list(x)))
-possible_words = df['word'].values
-
+df_wordle = pd.read_csv('dataset\\wordle.csv')
+df_termo = pd.read_csv('dataset\\termo.csv')
 
 def get_possible_words(df, correct_letters, wrong_letters, allowed_letters):
 
@@ -57,21 +56,51 @@ def validate_guess(guess_word, comp_word):
             score -= 1
     return score
 
+def word_crawler(filtered_words, verbose=False):
+    possible_words = {}
+    for candidate_guess in tqdm(filtered_words, disable=not verbose):
+        score = 0
+        for comp_word in possible_words:
+            score += validate_guess(candidate_guess, comp_word)
+        possible_words[candidate_guess] = score
+    return possible_words
+
+def game_selector():
+    game_selector_input = input('Select the game you want to play: \n1. Wordle\n2. Termo\n')
+    if game_selector_input == '1':
+        df = df_wordle.copy()
+        df[['1', '2', '3', '4', '5']] = df['word'].apply(lambda x: pd.Series(list(x)))
+        return df
+    elif game_selector_input == '2':
+        df = df_termo.copy()
+        df[['1', '2', '3', '4', '5']] = df['word'].apply(lambda x: pd.Series(list(x)))
+        return df
+    else:
+        print('Invalid input. Please try again.')
+        return game_selector()
+
+def find_first_word(df):
+    first_word_selector = input('Do you want to find the first word (This is a slow process)? (y/n)\n')
+    if first_word_selector == 'y' or first_word_selector == 'Y':
+        correct_letters = {'1': None,'2': None,'3': None,'4': None,'5': None}
+        wrong_letters = {'1': [],'2': [],'3': [],'4': [],'5': []}
+        allowed_letters = []
+        filtered_words = get_possible_words(df, correct_letters, wrong_letters, allowed_letters)
+        possible_words = pd.DataFrame.from_dict(word_crawler(filtered_words, verbose=True), orient='index', columns=['score'])
+        possible_words.sort_values(by=['score'], ascending=False, inplace=True)
+        print(possible_words.head(10).to_markdown())
+        print('\n')
 
 while True:
     os.system('cls')
+    df = game_selector()
+    find_first_word(df)
     print('Enter the word you guessed when prompted. After that, enter the colors as g, y, n for green, yellow and none respectively.')
     handler = Handler()
     correct_letters, wrong_letters, allowed_letters = handler.get_input()
     filtered_words = get_possible_words(df, correct_letters, wrong_letters, allowed_letters)
     while(None in correct_letters.values()):
-        possible_words = {}
-        for candidate_guess in filtered_words:
-            score = 0
-            for comp_word in possible_words:
-                score += validate_guess(candidate_guess, comp_word)
-            possible_words[candidate_guess] = score
-        possible_words = pd.DataFrame.from_dict(possible_words, orient='index', columns=['score'])
+        possible_words = pd.DataFrame.from_dict(word_crawler(filtered_words), orient='index', columns=['score'])
         possible_words.sort_values(by=['score'], ascending=False, inplace=True)
         print(possible_words.head(10).to_markdown())
         print('\n')
